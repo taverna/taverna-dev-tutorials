@@ -206,7 +206,7 @@ Copying the file back into the bundle:
 		Files.copy(localFile, bundle.getRoot().resolve("inputs/in1"));
 ```
 
-Remember that local `Path` objects can be converted from and to classical `java.io.File`. (Note: this does not work for Path objects within the bundle). We can use this to open the file in the default editor:
+Remember that local `Path` objects can be converted from and to classical `java.io.File`. (Note: this does not work for Path objects within the bundle). We can use this to open the file in operating system using [Desktop.open](http://docs.oracle.com/javase/7/docs/api/java/awt/Desktop.html#open%28java.io.File%29):
 
 
 ```java
@@ -218,25 +218,55 @@ import java.io.File;
 		Path path = file.toPath();
     // Open in operating system's default application, e.g. Notepad
     Desktop.getDesktop().open(file);
+    Thread.sleep(1000);
 ```
 
-RO bundles can also include references to external resources using URIs:
+RO bundles can also include references to external resources using URIs and [Bundles.setReference](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundles.java#L321):
 
 ```java
 import java.net.URI;
 
-		// Representing references
-		URI ref = URI.create("http://example.com/external.txt");
-		Path in3 = inputs.resolve("in3");
-		System.out.println(Bundles.setReference(out3, ref));
-		if (Bundles.isReference(out3)) {
-			URI resolved = Bundles.getReference(out3);
-			System.out.println(resolved);
+    // Bundling a reference to an external resource
+    URI ref = URI.create("http://example.com/external.txt");
+    Path in4 = inputs.resolve("in4");
+    System.out.println(Bundles.setReference(in4, ref));
+```
+
+We'll have a look at our current inputs:
+```java
+		// List all the inputs
+		for (Path p : Files.newDirectoryStream(inputs)) {
+			System.out.println(p);
 		}
 ```
 
+outputs:
+
+    /inputs/in4.url
+    /inputs/in3
+    /inputs/in2
+    /inputs/in1
+
+We see that in the ZIP file, the reference is stored as  `inputs/in4.url` rather than `inputs/in4`. This file extension is handled by the `Bundles` convenience methods, but also clickable in a naive unzipping of the bundle within the operating system.
+
+To read a potential input or output as a reference, use
+[Bundles.isReference](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundles.java#L166) and [Bundles.getReference](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundles.java#L125). We'll combine it with [Desktop.browse](http://docs.oracle.com/javase/7/docs/api/java/awt/Desktop.html#browse%28java.net.URI%29) to open the URL in a browser:
+
+```java
+		// If "inputs/in4" is a reference, open in browser
+		if (Bundles.isReference(bundle.getPath("inputs/in4"))) {
+			URI resolved = Bundles.getReference(in4);
+			System.out.println(resolved);
+			Desktop.getDesktop().browse(resolved);
+			Thread.sleep(1000);
+		}
+```
+
+Now we will save the bundle to disk using the `.bundle.zip` filename extension:
+
+```java
 		// Saving a bundle:
-		Path zip = Files.createTempFile("bundle", ".zip");
+		Path zip = Paths.get("my-inputs.bundle.zip")
 		Bundles.closeAndSaveBundle(bundle, zip);
 		// NOTE: From now "bundle" and its Path's are CLOSED
 		// and can no longer be accessed
