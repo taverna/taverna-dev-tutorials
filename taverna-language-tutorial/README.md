@@ -179,32 +179,61 @@ To add a binary or a large file, use the
 
 ```java
 import java.io.OutputStream;
-import java.nio.file.StandardOpenOption;
 
 		// Binaries and large files are done through the Files API
-		try (OutputStream out = Files.newOutputStream(in1,
-				StandardOpenOption.APPEND)) {
+		Path in2 = inputs.resolve("in2");
+		try (OutputStream out = Files.newOutputStream(in2)) {
 			out.write(32);
-		}
+		}  
 ```
 
-    
+As the Files API also work with local files, it's easy to copy files from and to the bundle using [Files.copy](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Files.html#copy%28java.nio.file.Path,%20java.nio.file.Path,%20java.nio.file.CopyOption...%29):
 
-		// Or Java 7 style
-		Path localFile = Files.createTempFile("", ".txt");
+```java
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+
+		// Copy out to the local file system
+		Path localFile = Paths.get("target/in1.txt");
 		Files.copy(in1, localFile, StandardCopyOption.REPLACE_EXISTING);
-		System.out.println("Written to: " + localFile);
+		System.out.println("Written to: " + localFile.toAbsolutePath());
+```
 
-		Files.copy(localFile, bundle.getRoot().resolve("out1"));
+Copying the file back into the bundle:
+
+```java
+		// or copy into the bundle from the file system
+		Files.copy(localFile, bundle.getRoot().resolve("inputs/in1"));
+```
+
+Remember that local `Path` objects can be converted from and to classical `java.io.File`. (Note: this does not work for Path objects within the bundle). We can use this to open the file in the default editor:
+
+
+```java
+import java.awt.Desktop;
+import java.io.File;
+
+    // convert to java.io.File and back to Path
+		File file = localFile.toFile();
+		Path path = file.toPath();
+    // Open in operating system's default application, e.g. Notepad
+    Desktop.getDesktop().open(file);
+```
+
+RO bundles can also include references to external resources using URIs:
+
+```java
+import java.net.URI;
 
 		// Representing references
 		URI ref = URI.create("http://example.com/external.txt");
-		Path out3 = bundle.getRoot().resolve("out3");
+		Path in3 = inputs.resolve("in3");
 		System.out.println(Bundles.setReference(out3, ref));
 		if (Bundles.isReference(out3)) {
 			URI resolved = Bundles.getReference(out3);
 			System.out.println(resolved);
 		}
+```
 
 		// Saving a bundle:
 		Path zip = Files.createTempFile("bundle", ".zip");
