@@ -75,7 +75,7 @@ The RO bundle API can process these container formats:
 
 
 
-### Using robundle
+### Creating a bundle
 
 Follow this tutorial by editing [src/main/java/com/example/tutorial/ROBundle.java](src/main/java/com/example/tutorial/ROBundle.java)
 
@@ -91,7 +91,7 @@ import org.purl.wf4ever.robundle.*;
     Bundle bundle = Bundles.createBundle();
 ```
 
-Using the `getRoot()` method we get a [java.nio.file.Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Path.html) that represent `/` within the bundle. We can use the [java.nio.Files](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Files.html) methods to explore and manipulate the bundle.  For instance, to list the content of the root folder:
+Using the `getRoot()` method we get a [java.nio.file.Path](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Path.html) that represent `/` within the bundle. We can use the [java.nio.Files](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Files.html) methods to explore and manipulate the bundle.  For instance, to list the content of the root folder, iterate over [Files.newDirectoryStream](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Files.html#newDirectoryStream%28java.nio.file.Path%29):
 
 ```java
 import java.nio.file.Files;
@@ -101,55 +101,95 @@ import java.nio.file.Path;
 			System.out.println(p);
 		}
 ```
-The new bundle is empty, except for the file [`/mimetype`](https://w3id.org/bundle#ucf):
 
+Run `ROBundle`'s `main()` method, either from within your IDE or by using `mvn test` on the command line:
 
+```
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running TestROBundle
+/mimetype
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.101 sec
+```
 
-For out first example, we'll try to create a bundle with workflow inputs, in
+We see that new bundle is empty, except for the file [`/mimetype`](https://w3id.org/bundle#ucf).
+
+### Workflow inputs
+
+Next we will try to create a bundle with workflow inputs, in
 order to use it with the Taverna 3 `executeworkflow.sh` command line.
 
 Workflow inputs are read from the `inputs/` folder of the ZIP archive, with filenames
 matching the input port names (no filename extension). For instance,
-for the workflow input ports `port1` and `port2`:
+for the workflow input ports `in1` and `in2` would be represented by the files:
 
- * inputs/port1
- * inputs/port2
+ * `inputs/`
+   * `inputs/in1`
+   * `inputs/in2`
 
+First we'll need to create the `inputs/` directory using [Files.createDirectory](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Files.html#createDirectory%28java.nio.file.Path,%20java.nio.file.attribute.FileAttribute...%29):
 
 ```java
 		// Get the inputs folder
 		Path inputs = bundle.getPath("inputs");
+		Files.createDirectory(inputs);
 ```
 
-The [getPath()](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundle.java#L73) method can also take a relative path like `inputs/port1` - but we first need to create the directory.
+Note that the [getPath()](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundle.java#L73) method can also take a relative path like `inputs/in1`.
 
-		Files.createDirectory(inputs);
-
-		Path inputs = bundle.getRoot().resolve("inputs");
-
-
-
+Instead We'll use the [Path.resolve](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Path.html#resolve%28java.lang.String%29) method to look up the relative filename:
+```java
 		// Get an input port:
 		Path in1 = inputs.resolve("in1");
+```
 
+To set the actual input value as an `UTF-8` string, use the
+[Bundles.setStringValue](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundles.java#L361) method:
+
+```java
 		// Setting a string value for the input port:
 		Bundles.setStringValue(in1, "Hello");
+```
 
+Similarly we can use [Bundles.getStringValue](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundles.java#L152) to read back the file:
+
+```java
 		// And retrieving it
 		if (Bundles.isValue(in1)) {
 			System.out.println(Bundles.getStringValue(in1));
 		}
+```
+
+The above is a convenience method for the regular [Paths.readAllLines](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Files.html#readAllLines%28java.nio.file.Path,%20java.nio.charset.Charset%29):
+
+```java
+import java.nio.charset.Charset;
 
 		// Or just use the regular Files methods:
 		for (String line : Files.readAllLines(in1, Charset.forName("UTF-8"))) {
 			System.out.println(line);
 		}
+```
+
+The `set`/`getStringValue` has the advantage that it is harder to accidentally add newlines to workflow inputs that shouldn't have it, and always uses the UTF-8 character set.
+
+To add a binary or a large file, use the
+[Files.newOutputStream](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Files.html#newOutputStream%28java.nio.file.Path,%20java.nio.file.OpenOption...%29) method:
+
+```java
+import java.io.OutputStream;
+import java.nio.file.StandardOpenOption;
 
 		// Binaries and large files are done through the Files API
 		try (OutputStream out = Files.newOutputStream(in1,
 				StandardOpenOption.APPEND)) {
 			out.write(32);
 		}
+```
+
+    
+
 		// Or Java 7 style
 		Path localFile = Files.createTempFile("", ".txt");
 		Files.copy(in1, localFile, StandardCopyOption.REPLACE_EXISTING);
