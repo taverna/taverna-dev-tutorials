@@ -13,6 +13,8 @@ import java.nio.file.StandardCopyOption;
 import org.purl.wf4ever.robundle.Bundle;
 import org.purl.wf4ever.robundle.Bundles;
 
+import uk.org.taverna.databundle.DataBundles;
+
 public class ROBundle {
 
 	public static void main(String[] args) throws Exception {
@@ -81,6 +83,20 @@ public class ROBundle {
 			Desktop.getDesktop().browse(resolved);
 			Thread.sleep(1000);
 		}
-
+		
+		// Saving a bundle:
+		Path zip = Paths.get("target/my-inputs.bundle.zip");
+		Bundles.closeAndSaveBundle(bundle, zip);
+		// NOTE: From now "bundle" and its Path's are CLOSED
+		// and can no longer be accessed
+		System.out.println("Saved to " + zip);
+		
+		// Loading a bundle back from disk
+		try (Bundle bundle2 = Bundles.openBundle(zip)) {
+			// and modify it
+			Files.delete(bundle2.getPath("inputs/in3"));
+		}
+		
+		
 	}
 }

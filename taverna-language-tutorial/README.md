@@ -187,6 +187,8 @@ import java.io.OutputStream;
 		}  
 ```
 
+If you want to copy a directory tree, use [Bundles.copyRecursively](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundles.java#L72).
+
 As the Files API also work with local files, it's easy to copy files from and to the bundle using [Files.copy](http://docs.oracle.com/javase/7/docs/api/java/nio/file/Files.html#copy%28java.nio.file.Path,%20java.nio.file.Path,%20java.nio.file.CopyOption...%29):
 
 ```java
@@ -262,7 +264,7 @@ To read a potential input or output as a reference, use
 		}
 ```
 
-Now we will save the bundle to disk using the `.bundle.zip` filename extension:
+Now we will save the bundle to disk, with the `.bundle.zip` filename extension, using [Bundles.closeAndSaveBundle](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundles.java#L56):
 
 ```java
 		// Saving a bundle:
@@ -270,14 +272,21 @@ Now we will save the bundle to disk using the `.bundle.zip` filename extension:
 		Bundles.closeAndSaveBundle(bundle, zip);
 		// NOTE: From now "bundle" and its Path's are CLOSED
 		// and can no longer be accessed
-
 		System.out.println("Saved to " + zip);
+```
 
+Finally, we'll show how to open an existing bundle from disk. We already have the `Path` from above, and we'll use the
+
+[Bundles.openBundle](https://github.com/wf4ever/robundle/blob/0.5.0/src/main/java/org/purl/wf4ever/robundle/Bundles.java#L182) method in a [Java 7 try-with-resources block](http://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html) so the bundle is automatically is closed afterwards:
+
+```java
 		// Loading a bundle back from disk
 		try (Bundle bundle2 = Bundles.openBundle(zip)) {
-			assertEquals(zip, bundle2.getSource());
+			// and modify it
+			Files.delete(bundle2.getPath("inputs/in3"));
 		}
- ```
+```
+
 
 
 Data bundles API
@@ -428,12 +437,14 @@ Ports can be browsed as a map by port name:
 
 Saving a data bundle:
 ```java
+    /// Save data bundle to disk
         Path zip = Files.createTempFile("databundle", ".zip");
         DataBundles.closeAndSaveBundle(dataBundle, zip);
         // NOTE: From now dataBundle and its Path's are CLOSED
         // and can no longer be accessed
         System.out.println("Saved to " + zip);
 ```
+
 ```
 Saved to C:\Users\stain\AppData\Local\Temp\databundle6905894602121718151.zip
 ```
