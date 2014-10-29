@@ -287,6 +287,28 @@ Finally, we'll show how to open an existing bundle from disk. We already have th
 		}
 ```
 
+### Exploring the bundle ZIP archive
+
+If you open `target/my-inputs.bundle.zip` in your operating system, you should see something like:
+
+    stain@biggie-mint ~/src/taverna-dev-tutorials/taverna-language-tutorial/target/1 $ unzip ../my-inputs.bundle.zip
+    Archive:  ../my-inputs.bundle.zip
+     extracting: mimetype
+       creating: inputs/
+      inflating: inputs/in1
+      inflating: inputs/in2
+      inflating: inputs/in3
+      inflating: inputs/in4.url
+       creating: .ro/
+      inflating: .ro/manifest.json
+
+### Using the bundle as workflow inputs
+
+To use the saved bundle `target/my-inputs.bundle.zip` as workflow inputs, download and unzip the latest
+[taverna-command-line-product-3.0.1-SNAPSHOT-release.zip](http://build.mygrid.org.uk/ci/view/Products/job/taverna-commandline-product-taverna3/lastSuccessfulBuild/uk.org.taverna.workbench$taverna-command-line-product/artifact/uk.org.taverna.workbench/taverna-command-line-product/3.0.1-SNAPSHOT/taverna-command-line-product-3.0.1-SNAPSHOT-release.zip) from the [Jenkins automated build](http://build.mygrid.org.uk/ci/view/Products/job/taverna-commandline-product-taverna3/lastSuccessfulBuild/uk.org.taverna.workbench$taverna-command-line-product/).
+
+
+
 
 
 Data bundles API
