@@ -18,5 +18,6 @@ import uk.org.taverna.databundle.DataBundles;
 public class ROBundleSkeleton {
 
 	public static void main(String[] args) throws Exception {
+;
 	}
 }
